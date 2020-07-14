@@ -344,8 +344,13 @@ func prView(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(cmd.ErrOrStderr(), "Opening %s in your browser.\n", openURL)
 		return utils.OpenInBrowser(openURL)
 	}
-	out := colorableOut(cmd)
-	return printPrPreview(out, pr)
+
+	if connectedToTerminal(cmd) {
+		out := colorableOut(cmd)
+		return printHumanPrPreview(out, pr)
+	}
+
+	return printRawPrPreview(cmd.OutOrStdout(), pr)
 }
 
 func prClose(cmd *cobra.Command, args []string) error {
@@ -599,7 +604,11 @@ func prInteractiveMerge(deleteLocalBranch bool, crossRepoPR bool) (api.PullReque
 	return mergeMethod, deleteBranch, nil
 }
 
-func printPrPreview(out io.Writer, pr *api.PullRequest) error {
+func printRawPrPreview(out io.Writer, pr *api.PullRequest) error {
+	return nil
+}
+
+func printHumanPrPreview(out io.Writer, pr *api.PullRequest) error {
 	// Header (Title and State)
 	fmt.Fprintln(out, utils.Bold(pr.Title))
 	fmt.Fprintf(out, "%s", prStateTitleWithColor(*pr))

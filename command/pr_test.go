@@ -409,6 +409,7 @@ func TestPRList_withInvalidLimitFlag(t *testing.T) {
 }
 
 func TestPRView_Preview(t *testing.T) {
+	defer stubTerminal(true)()
 	tests := map[string]struct {
 		ownerRepo       string
 		args            string
