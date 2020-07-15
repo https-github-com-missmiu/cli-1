@@ -605,6 +605,23 @@ func prInteractiveMerge(deleteLocalBranch bool, crossRepoPR bool) (api.PullReque
 }
 
 func printRawPrPreview(out io.Writer, pr *api.PullRequest) error {
+	reviewers := prReviewerList(*pr)
+	assignees := prAssigneeList(*pr)
+	labels := prLabelList(*pr)
+	projects := prProjectList(*pr)
+
+	fmt.Fprintf(out, "title:\t%s\n", pr.Title)
+	fmt.Fprintf(out, "state:\t%s\n", pr.State)
+	fmt.Fprintf(out, "author:\t%s\n", pr.Author.Login)
+	fmt.Fprintf(out, "labels:\t%s\n", labels)
+	fmt.Fprintf(out, "assignees:\t%s\n", assignees)
+	fmt.Fprintf(out, "reviewers:\t%s\n", reviewers)
+	fmt.Fprintf(out, "projects:\t%s\n", projects)
+	fmt.Fprintf(out, "milestone:\t%s\n", pr.Milestone.Title)
+
+	fmt.Fprintln(out, "--")
+	fmt.Fprintln(out, pr.Body)
+
 	return nil
 }
 
