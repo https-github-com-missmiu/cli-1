@@ -109,7 +109,7 @@ func prReview(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("did not understand desired review action: %w", err)
 	}
 
-	out := colorableOut(cmd)
+	stderr := cmd.ErrOrStderr()
 
 	if reviewData == nil {
 		reviewData, err = reviewSurvey(cmd)
@@ -117,7 +117,7 @@ func prReview(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		if reviewData == nil && err == nil {
-			fmt.Fprint(out, "Discarding.\n")
+			fmt.Fprint(stderr, "Discarding.\n")
 			return nil
 		}
 	}
@@ -129,11 +129,11 @@ func prReview(cmd *cobra.Command, args []string) error {
 
 	switch reviewData.State {
 	case api.ReviewComment:
-		fmt.Fprintf(out, "%s Reviewed pull request #%d\n", utils.Gray("-"), pr.Number)
+		fmt.Fprintf(stderr, "%s Reviewed pull request #%d\n", utils.Gray("-"), pr.Number)
 	case api.ReviewApprove:
-		fmt.Fprintf(out, "%s Approved pull request #%d\n", utils.Green("✓"), pr.Number)
+		fmt.Fprintf(stderr, "%s Approved pull request #%d\n", utils.Green("✓"), pr.Number)
 	case api.ReviewRequestChanges:
-		fmt.Fprintf(out, "%s Requested changes to pull request #%d\n", utils.Red("+"), pr.Number)
+		fmt.Fprintf(stderr, "%s Requested changes to pull request #%d\n", utils.Red("+"), pr.Number)
 	}
 
 	return nil
