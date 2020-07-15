@@ -72,7 +72,10 @@ func processReviewOpt(cmd *cobra.Command) (*api.PullRequestReviewInput, error) {
 	}
 
 	if found == 0 && body == "" {
-		return nil, nil // signal interactive mode
+		if connectedToTerminal(cmd) {
+			return nil, nil // signal interactive mode
+		}
+		return nil, errors.New("--approve, --request-changes, or --comment required when not attached to a tty")
 	} else if found == 0 && body != "" {
 		return nil, errors.New("--body unsupported without --approve, --request-changes, or --comment")
 	} else if found > 1 {

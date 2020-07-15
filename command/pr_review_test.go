@@ -254,8 +254,13 @@ func TestPRReview(t *testing.T) {
 	}
 }
 
+func TestPRReview_nontty(t *testing.T) {
+	eq(t, 1, 0)
+}
+
 func TestPRReview_interactive(t *testing.T) {
 	initBlankContext("", "OWNER/REPO", "feature")
+	defer stubTerminal(true)()
 	http := initFakeHTTP()
 	http.StubRepoResponse("OWNER", "REPO")
 	http.StubResponse(200, bytes.NewBufferString(`
@@ -317,6 +322,7 @@ func TestPRReview_interactive(t *testing.T) {
 
 func TestPRReview_interactive_no_body(t *testing.T) {
 	initBlankContext("", "OWNER/REPO", "feature")
+	defer stubTerminal(true)()
 	http := initFakeHTTP()
 	http.StubRepoResponse("OWNER", "REPO")
 	http.StubResponse(200, bytes.NewBufferString(`
@@ -359,6 +365,7 @@ func TestPRReview_interactive_no_body(t *testing.T) {
 
 func TestPRReview_interactive_blank_approve(t *testing.T) {
 	initBlankContext("", "OWNER/REPO", "feature")
+	defer stubTerminal(true)()
 	http := initFakeHTTP()
 	http.StubRepoResponse("OWNER", "REPO")
 	http.StubResponse(200, bytes.NewBufferString(`
