@@ -408,6 +408,187 @@ func TestPRList_withInvalidLimitFlag(t *testing.T) {
 	}
 }
 
+func TestPRView_Preview_nontty(t *testing.T) {
+	defer stubTerminal(false)()
+	tests := map[string]struct {
+		ownerRepo       string
+		args            string
+		fixture         string
+		expectedOutputs []string
+	}{
+		"Open PR without metadata": {
+			ownerRepo: "master",
+			args:      "pr view 12",
+			fixture:   "../test/fixtures/prViewPreview.json",
+			expectedOutputs: []string{
+				`title:\tBlueberries are from a fork\n`,
+				`state:\tOPEN\n`,
+				`author:\tnobody\n`,
+				`labels:\t\n`,
+				`assignees:\t\n`,
+				`reviewers:\t\n`,
+				`projects:\t\n`,
+				`milestone:\t\n`,
+				`blueberries taste good`,
+			},
+		},
+		"Open PR with metadata by number": {
+			ownerRepo: "master",
+			args:      "pr view 12",
+			fixture:   "../test/fixtures/prViewPreviewWithMetadataByNumber.json",
+			expectedOutputs: []string{
+				`title:\tBlueberries are from a fork\n`,
+				`reviewers:\t2 \(Approved\), 3 \(Commented\), 1 \(Requested\)\n`,
+				`assignees:\tmarseilles, monaco\n`,
+				`labels:\tone, two, three, four, five\n`,
+				`projects:\tProject 1 \(column A\), Project 2 \(column B\), Project 3 \(column C\), Project 4 \(Awaiting triage\)\n`,
+				`milestone:\tuluru\n`,
+				`\*\*blueberries taste good\*\*`,
+			},
+		},
+		"Open PR with reviewers by number": {
+			ownerRepo: "master",
+			args:      "pr view 12",
+			fixture:   "../test/fixtures/prViewPreviewWithReviewersByNumber.json",
+			expectedOutputs: []string{
+				`title:\tBlueberries are from a fork\n`,
+				`state:\tOPEN\n`,
+				`author:\tnobody\n`,
+				`labels:\t\n`,
+				`assignees:\t\n`,
+				`projects:\t\n`,
+				`milestone:\t\n`,
+				`reviewers:\tDEF \(Commented\), def \(Changes requested\), ghost \(Approved\), hubot \(Commented\), xyz \(Approved\), 123 \(Requested\), Team 1 \(Requested\), abc \(Requested\)\n`,
+				`\*\*blueberries taste good\*\*`,
+			},
+		},
+		"Open PR with metadata by branch": {
+			ownerRepo: "master",
+			args:      "pr view blueberries",
+			fixture:   "../test/fixtures/prViewPreviewWithMetadataByBranch.json",
+			expectedOutputs: []string{
+				`title:\tBlueberries are a good fruit`,
+				`state:\tOPEN`,
+				`author:\tnobody`,
+				`assignees:\tmarseilles, monaco\n`,
+				`labels:\tone, two, three, four, five\n`,
+				`projects:\tProject 1 \(column A\), Project 2 \(column B\), Project 3 \(column C\)\n`,
+				`milestone:\tuluru\n`,
+				`blueberries taste good`,
+			},
+		},
+		"Open PR for the current branch": {
+			ownerRepo: "blueberries",
+			args:      "pr view",
+			fixture:   "../test/fixtures/prView.json",
+			expectedOutputs: []string{
+				`title:\tBlueberries are a good fruit`,
+				`state:\tOPEN`,
+				`author:\tnobody`,
+				`assignees:\t\n`,
+				`labels:\t\n`,
+				`projects:\t\n`,
+				`milestone:\t\n`,
+				`\*\*blueberries taste good\*\*`,
+			},
+		},
+		"Open PR wth empty body for the current branch": {
+			ownerRepo: "blueberries",
+			args:      "pr view",
+			fixture:   "../test/fixtures/prView_EmptyBody.json",
+			expectedOutputs: []string{
+				`title:\tBlueberries are a good fruit`,
+				`state:\tOPEN`,
+				`author:\tnobody`,
+				`assignees:\t\n`,
+				`labels:\t\n`,
+				`projects:\t\n`,
+				`milestone:\t\n`,
+			},
+		},
+		"Closed PR": {
+			ownerRepo: "master",
+			args:      "pr view 12",
+			fixture:   "../test/fixtures/prViewPreviewClosedState.json",
+			expectedOutputs: []string{
+				`state:\tCLOSED\n`,
+				`author:\tnobody\n`,
+				`labels:\t\n`,
+				`assignees:\t\n`,
+				`reviewers:\t\n`,
+				`projects:\t\n`,
+				`milestone:\t\n`,
+				`\*\*blueberries taste good\*\*`,
+			},
+		},
+		"Merged PR": {
+			ownerRepo: "master",
+			args:      "pr view 12",
+			fixture:   "../test/fixtures/prViewPreviewMergedState.json",
+			expectedOutputs: []string{
+				`state:\tMERGED\n`,
+				`author:\tnobody\n`,
+				`labels:\t\n`,
+				`assignees:\t\n`,
+				`reviewers:\t\n`,
+				`projects:\t\n`,
+				`milestone:\t\n`,
+				`\*\*blueberries taste good\*\*`,
+			},
+		},
+		"Draft PR": {
+			ownerRepo: "master",
+			args:      "pr view 12",
+			fixture:   "../test/fixtures/prViewPreviewDraftState.json",
+			expectedOutputs: []string{
+				// TODO should include draft status somehow.
+				`title:\tBlueberries are from a fork\n`,
+				`state:\tOPEN\n`,
+				`author:\tnobody\n`,
+				`labels:`,
+				`assignees:`,
+				`projects:`,
+				`milestone:`,
+				`\*\*blueberries taste good\*\*`,
+			},
+		},
+		"Draft PR by branch": {
+			ownerRepo: "master",
+			args:      "pr view blueberries",
+			fixture:   "../test/fixtures/prViewPreviewDraftStatebyBranch.json",
+			expectedOutputs: []string{
+				// TODO should include draft status somehow.
+				`title:\tBlueberries are a good fruit\n`,
+				`state:\tOPEN\n`,
+				`author:\tnobody\n`,
+				`labels:`,
+				`assignees:`,
+				`projects:`,
+				`milestone:`,
+				`\*\*blueberries taste good\*\*`,
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			initBlankContext("", "OWNER/REPO", tc.ownerRepo)
+			http := initFakeHTTP()
+			http.StubRepoResponse("OWNER", "REPO")
+			http.Register(httpmock.GraphQL(`query PullRequest(ByNumber|ForBranch)\b`), httpmock.FileResponse(tc.fixture))
+
+			output, err := RunCommand(tc.args)
+			if err != nil {
+				t.Errorf("error running command `%v`: %v", tc.args, err)
+			}
+
+			eq(t, output.Stderr(), "")
+
+			test.ExpectLines(t, output.String(), tc.expectedOutputs...)
+		})
+	}
+}
+
 func TestPRView_Preview(t *testing.T) {
 	defer stubTerminal(true)()
 	tests := map[string]struct {
