@@ -49,6 +49,7 @@ func TestPRReview_bad_body(t *testing.T) {
 
 func TestPRReview_url_arg(t *testing.T) {
 	initBlankContext("", "OWNER/REPO", "master")
+	defer stubTerminal(true)()
 	http := initFakeHTTP()
 	http.StubResponse(200, bytes.NewBufferString(`
 		{ "data": { "repository": { "pullRequest": {
@@ -74,7 +75,7 @@ func TestPRReview_url_arg(t *testing.T) {
 		t.Fatalf("error running pr review: %s", err)
 	}
 
-	test.ExpectLines(t, output.String(), "Approved pull request #123")
+	test.ExpectLines(t, output.Stderr(), "Approved pull request #123")
 
 	bodyBytes, _ := ioutil.ReadAll(http.Requests[1].Body)
 	reqBody := struct {
@@ -95,6 +96,7 @@ func TestPRReview_url_arg(t *testing.T) {
 
 func TestPRReview_number_arg(t *testing.T) {
 	initBlankContext("", "OWNER/REPO", "master")
+	defer stubTerminal(true)()
 	http := initFakeHTTP()
 	http.StubRepoResponse("OWNER", "REPO")
 	http.StubResponse(200, bytes.NewBufferString(`
@@ -121,7 +123,7 @@ func TestPRReview_number_arg(t *testing.T) {
 		t.Fatalf("error running pr review: %s", err)
 	}
 
-	test.ExpectLines(t, output.String(), "Approved pull request #123")
+	test.ExpectLines(t, output.Stderr(), "Approved pull request #123")
 
 	bodyBytes, _ := ioutil.ReadAll(http.Requests[2].Body)
 	reqBody := struct {
@@ -142,6 +144,7 @@ func TestPRReview_number_arg(t *testing.T) {
 
 func TestPRReview_no_arg(t *testing.T) {
 	initBlankContext("", "OWNER/REPO", "feature")
+	defer stubTerminal(true)()
 	http := initFakeHTTP()
 	http.StubRepoResponse("OWNER", "REPO")
 	http.StubResponse(200, bytes.NewBufferString(`
@@ -159,7 +162,7 @@ func TestPRReview_no_arg(t *testing.T) {
 		t.Fatalf("error running pr review: %s", err)
 	}
 
-	test.ExpectLines(t, output.String(), "- Reviewed pull request #123")
+	test.ExpectLines(t, output.Stderr(), "- Reviewed pull request #123")
 
 	bodyBytes, _ := ioutil.ReadAll(http.Requests[2].Body)
 	reqBody := struct {
@@ -255,6 +258,7 @@ func TestPRReview(t *testing.T) {
 }
 
 func TestPRReview_nontty(t *testing.T) {
+	// TODO
 	eq(t, 1, 0)
 }
 
@@ -300,10 +304,11 @@ func TestPRReview_interactive(t *testing.T) {
 		t.Fatalf("got unexpected error running pr review: %s", err)
 	}
 
+	test.ExpectLines(t, output.Stderr(), "Approved pull request #123")
+
 	test.ExpectLines(t, output.String(),
-		"Approved pull request #123",
 		"Got:",
-		"cool.*story") // weird because markdown rendering puts a bunch of junk between works
+		"cool.*story")
 
 	bodyBytes, _ := ioutil.ReadAll(http.Requests[2].Body)
 	reqBody := struct {
@@ -410,7 +415,7 @@ func TestPRReview_interactive_blank_approve(t *testing.T) {
 		t.Errorf("did not expect to see body printed in %s", output.String())
 	}
 
-	test.ExpectLines(t, output.String(), "Approved pull request #123")
+	test.ExpectLines(t, output.Stderr(), "Approved pull request #123")
 
 	bodyBytes, _ := ioutil.ReadAll(http.Requests[2].Body)
 	reqBody := struct {
